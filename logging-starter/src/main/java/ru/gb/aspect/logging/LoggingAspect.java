@@ -25,18 +25,31 @@ public class LoggingAspect {
   @Around(value = "loggingMethodsPointcut() || loggingTypePointcut()")
   public Object loggingMethod(ProceedingJoinPoint pjp) throws Throwable {
     String methodName = pjp.getSignature().getName();
+    Object[] args = pjp.getArgs();
+    Class<?>[] paramTypes = ((org.aspectj.lang.reflect.MethodSignature) pjp.getSignature()).getParameterTypes();
 
-    // Логирование аргументов, если printArgs = true
     if (properties.isPrintArgs()) {
-      Object[] args = pjp.getArgs();
-      log.atLevel(properties.getLevel()).log("Arguments for TimesheetService#{}: {}", methodName, args);
+      StringBuilder argsLog = new StringBuilder();
+      for (int i = 0; i < args.length; i++) {
+        argsLog.append(paramTypes[i].getSimpleName())
+                .append(" = ")
+                .append(args[i]);
+        if (i < args.length - 1) {
+          argsLog.append(", ");
+        }
+      }
+      log.atLevel(properties.getLevel()).log("Arguments for {}#{}: [{}]",
+              pjp.getTarget().getClass().getSimpleName(), methodName, argsLog);
     }
 
-    log.atLevel(properties.getLevel()).log("Before -> TimesheetService#{}", methodName);
+    log.atLevel(properties.getLevel()).log("Before -> {}#{}",
+            pjp.getTarget().getClass().getSimpleName(), methodName);
+
     try {
       return pjp.proceed();
     } finally {
-      log.atLevel(properties.getLevel()).log("After -> TimesheetService#{}", methodName);
+      log.atLevel(properties.getLevel()).log("After -> {}#{}",
+              pjp.getTarget().getClass().getSimpleName(), methodName);
     }
   }
 }
